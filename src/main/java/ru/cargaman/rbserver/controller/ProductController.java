@@ -11,6 +11,7 @@ import ru.cargaman.rbserver.service.ProductService;
 import ru.cargaman.rbserver.status.ServiceStatus;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/product")
@@ -58,6 +59,29 @@ public class ProductController {
                 p.isPublic(),
                 p.getAuthor().getLogin()
         )));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getProductById(
+            @PathVariable("id") Integer productId,
+            @RequestParam Integer userId
+    ){
+        Product product = productService.getById(productId);
+        if(product == null){
+            return ResponseEntity.status(404).body("There is no such product");
+        }
+        if(Objects.equals(product.getAuthor().getId(), userId) || product.isPublic()){
+            return ResponseEntity.ok(new ProductResponse(
+                    product.getId(),
+                    product.getName(),
+                    product.getMeasure(),
+                    product.isPublic(),
+                    product.getAuthor().getLogin()
+            ));
+        }
+        else {
+            return ResponseEntity.status(403).body("It's looks like you don't have access to this product");
+        }
     }
 
     @PostMapping

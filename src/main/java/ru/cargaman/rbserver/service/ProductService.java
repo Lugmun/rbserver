@@ -28,7 +28,9 @@ public class ProductService {
     }
 
     public List<Product> getAllProducts() {
-        return productRepository.findAll();
+        return productRepository.findAll().stream()
+                .filter(p -> !p.isDeleted())
+                .toList();
     }
 
     public List<Product> getAllOfUserById (Integer userId) {
@@ -36,6 +38,7 @@ public class ProductService {
                 .stream()
                 .filter(product ->
                         Objects.equals(product.getAuthor().getId(), userId))
+                .filter(p -> !p.isDeleted())
                 .toList();
     }
 
@@ -44,20 +47,19 @@ public class ProductService {
                 .stream()
                 .filter(product ->
                         Objects.equals(product.getAuthor().getLogin(), userLogin))
+                .filter(p -> !p.isDeleted())
                 .toList();
     }
 
     public Product getById(Integer productId){
-        return productRepository.findAll()
-                .stream()
-                .filter(product ->
-                        Objects.equals(product.getId(), productId)).findFirst().get();
+        return productRepository.findById(productId).orElse(null);
     }
 
     public List<Product> getAllPublic() {
         return productRepository.findAll()
                 .stream()
                 .filter(Product::isPublic)
+                .filter(p -> !p.isDeleted())
                 .toList();
     }
 
@@ -65,6 +67,7 @@ public class ProductService {
         return productRepository.findAll()
                 .stream()
                 .filter(p -> p.isPublic() || Objects.equals(p.getAuthor().getId(), id))
+                .filter(p -> !p.isDeleted())
                 .toList();
     }
 
@@ -105,6 +108,9 @@ public class ProductService {
         }
         Product product = productRepository.findById(productId).orElse(null);
         if(product == null){
+            return ServiceStatus.EntityNotFound;
+        }
+        if(product.isDeleted()){
             return ServiceStatus.EntityNotFound;
         }
         if(!Objects.equals(product.getAuthor().getId(), userId)){
