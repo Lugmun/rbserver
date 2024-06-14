@@ -130,8 +130,22 @@ public class ProductService {
         productRepository.findById(productId).get().setPublic(isPublic);
     }
 
-    //todo: may be rework
-    public void delete(Integer productId) {
-        productRepository.deleteById(productId);
+    //todo: admins public product update and other abilities
+
+    public ServiceStatus delete(Integer productId, boolean value, Integer userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if(user == null){
+            return ServiceStatus.UserNotFound;
+        }
+        Product product = productRepository.findById(productId).orElse(null);
+        if(product == null){
+            return ServiceStatus.EntityNotFound;
+        }
+        if(!Objects.equals(product.getAuthor().getId(), userId)){
+            return ServiceStatus.NotAllowed;
+        }
+        product.setDeleted(value);
+        productRepository.save(product);
+        return ServiceStatus.success;
     }
 }

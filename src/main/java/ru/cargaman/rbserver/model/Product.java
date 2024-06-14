@@ -22,6 +22,9 @@ public class Product {
     @Column(nullable = false)
     private boolean isPublic;
 
+    @Column(nullable = false)
+    private boolean deleted = false;
+
     @ManyToOne
     @JoinColumn(nullable = false)
     private User author;

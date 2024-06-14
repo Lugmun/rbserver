@@ -116,5 +116,53 @@ public class ProductController {
         }
         return ResponseEntity.status(418).body("-_-");
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProduct(
+            @PathVariable("id") Integer id,
+            //temporal
+            @RequestParam Integer userId
+    ){
+        ServiceStatus code = productService.delete(id, true, userId);
+        switch (code){
+            case success -> {
+                return ResponseEntity.ok("Success");
+            }
+            case NotAllowed -> {
+                return ResponseEntity.status(403).body("It's look like you don't have access to this product");
+            }
+            case UserNotFound -> {
+                return ResponseEntity.status(404).body("There is no such user");
+            }
+            case EntityNotFound -> {
+                return ResponseEntity.status(404).body("There is no such product");
+            }
+        }
+        return ResponseEntity.status(418).body("-_-");
+    }
+
+    @DeleteMapping("/restore/{id}")
+    public ResponseEntity<?> restoreProduct(
+            @PathVariable("id") Integer id,
+            //temporal
+            @RequestParam Integer userId
+    ){
+        ServiceStatus code = productService.delete(id, false, userId);
+        switch (code){
+            case success -> {
+                return ResponseEntity.ok("Success");
+            }
+            case NotAllowed -> {
+                return ResponseEntity.status(403).body("It's look like you don't have access to this product");
+            }
+            case UserNotFound -> {
+                return ResponseEntity.status(404).body("There is no such user");
+            }
+            case EntityNotFound -> {
+                return ResponseEntity.status(404).body("There is no such product");
+            }
+        }
+        return ResponseEntity.status(418).body("-_-");
+    }
 }
 

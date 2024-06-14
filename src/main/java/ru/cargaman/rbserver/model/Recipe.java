@@ -26,6 +26,9 @@ public class Recipe {
     @Column
     private Integer portions;
 
+    @Column(nullable = false)
+    private boolean deleted;
+
     @ManyToOne
     @JoinColumn(nullable = false)
     private User author;
