@@ -26,6 +26,9 @@ public class Recipe {
     @Column
     private Integer portions;
 
+    @Column
+    private boolean isPublic;
+
     @Column(nullable = false)
     private boolean deleted;
 
