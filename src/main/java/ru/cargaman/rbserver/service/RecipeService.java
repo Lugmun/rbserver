@@ -34,6 +34,14 @@ public class RecipeService {
                 .toList();
     }
 
+    public List<Recipe> getAllPublic(){
+        return recipeRepository.findAll()
+                .stream()
+                .filter(r -> !r.isDeleted())
+                .filter(Recipe::isPublic)
+                .toList();
+    }
+
     public ServiceStatus add(Integer userId, String name, String description, Integer time, Integer portions){
         User user = userRepository.findById(userId).orElse(null);
         if(user == null){
