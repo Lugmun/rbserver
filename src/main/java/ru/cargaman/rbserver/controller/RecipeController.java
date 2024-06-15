@@ -6,11 +6,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.cargaman.rbserver.model.Recipe;
 import ru.cargaman.rbserver.request.RecipeAddRequest;
+import ru.cargaman.rbserver.request.RecipeEditRequest;
 import ru.cargaman.rbserver.response.*;
 import ru.cargaman.rbserver.service.RecipeService;
 import ru.cargaman.rbserver.status.ServiceStatus;
+import ru.cargaman.rbserver.utils.MiscUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/recipe")
@@ -23,7 +26,8 @@ public class RecipeController {
     public ResponseEntity<?> getAll(
             @RequestParam Integer userId,
             @RequestParam(required = false) Boolean publicOnly,
-            @RequestParam(required = false) Boolean full
+            @RequestParam(required = false) Boolean full,
+            @RequestParam(required = false) String search
             ){
         if(publicOnly == null){
             publicOnly = false;
@@ -38,6 +42,11 @@ public class RecipeController {
         else {
             recipes = recipeService.getAll();
         }
+        if(search != null){
+            recipes = recipes.stream()
+                    .filter(r -> MiscUtils.matchString(r.getName(), search))
+                    .toList();
+        }
         if(full){
             return ResponseEntity.ok(recipes
                     .stream()
@@ -47,6 +56,69 @@ public class RecipeController {
         return ResponseEntity.ok(recipes.stream()
                 .map(this::recipeParse)
                 .toList());
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<?> getAvailable(
+            @RequestParam Integer userId,
+            @RequestParam(required = false) Boolean publicOnly,
+            @RequestParam(required = false) Boolean full,
+            @RequestParam(required = false) String search
+    ){
+        if(publicOnly == null){
+            publicOnly = false;
+        }
+        if(full == null){
+            full = false;
+        }
+        List<Recipe> recipes;
+        if(publicOnly){
+            recipes = recipeService.getAllPublic();
+        }
+        else {
+            recipes = recipeService.getAllAvailable(userId);
+        }
+        if(search != null){
+            recipes = recipes.stream()
+                    .filter(r -> MiscUtils.matchString(r.getName(), search))
+                    .toList();
+        }
+        if(full){
+            return ResponseEntity.ok(recipes
+                    .stream()
+                    .map(this::recipeFullParse)
+                    .toList());
+        }
+        return ResponseEntity.ok(recipes
+                .stream()
+                .map(this::recipeParse)
+                .toList());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getRecipeById(
+            @PathVariable("id") Integer recipeId,
+            @RequestParam Integer userId,
+            @RequestParam(required = false) Boolean full
+    ){
+        if(full == null){
+            full = false;
+        }
+        Recipe recipe = recipeService.getById(recipeId);
+        if(recipe == null){
+            return ResponseEntity.status(404).body("There is no such recipe");
+        }
+        if(recipe.isPublic() || Objects.equals(recipe.getAuthor().getId(), userId)){
+            if(full){
+                return ResponseEntity.ok(recipeFullParse(recipe));
+            }
+            else {
+                return ResponseEntity.ok(recipeParse(recipe));
+            }
+        }
+        else {
+            return ResponseEntity.status(403).body("It's looks like you don't have access to this recipe");
+        }
     }
 
     @PostMapping
@@ -67,6 +139,86 @@ public class RecipeController {
             }
             case NotUnique -> {
                 return ResponseEntity.ok("It's looks like recipe with such name already exists");
+            }
+        }
+        return ResponseEntity.status(418).body("-_-");
+    }
+
+    @PutMapping
+    public ResponseEntity<?> putRecipe(
+            @RequestParam Integer userId,
+            @RequestBody RecipeEditRequest recipeRequest
+            ){
+        if(recipeRequest.id() == null){
+            return ResponseEntity.badRequest().body("There is no recipe id in request body");
+        }
+        ServiceStatus code = recipeService.update(userId,
+                recipeRequest.id(),
+                recipeRequest.name(),
+                recipeRequest.description(),
+                recipeRequest.time(),
+                recipeRequest.portions());
+        switch (code){
+            case success -> {
+                return ResponseEntity.ok("Success");
+            }
+            case UserNotFound -> {
+                return ResponseEntity.status(404).body("There is no such user");
+            }
+            case EntityNotFound -> {
+                return ResponseEntity.status(404).body("There is no such recipe");
+            }
+            case NotUnique -> {
+                return ResponseEntity.status(409).body("Recipe with such name already exists");
+            }
+            case NotAllowed -> {
+                return ResponseEntity.status(403).body("It's looks like you don't have access to this recipe");
+            }
+        }
+        return ResponseEntity.status(418).body("-_-");
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteRecipe(
+            @PathVariable("id") Integer recipeId,
+            @RequestParam Integer userId
+    ){
+        ServiceStatus code = recipeService.delete(userId, recipeId, true);
+        switch (code){
+            case success -> {
+                return ResponseEntity.ok("Success");
+            }
+            case UserNotFound -> {
+                return ResponseEntity.status(404).body("There is no such user");
+            }
+            case EntityNotFound -> {
+                return ResponseEntity.status(404).body("There is no such recipe");
+            }
+            case NotAllowed -> {
+                return ResponseEntity.status(403).body("It's looks like you don't have access to this recipe");
+            }
+        }
+        return ResponseEntity.status(418).body("-_-");
+    }
+
+    @DeleteMapping("/restore/{id}")
+    public ResponseEntity<?> restoreRecipe(
+            @PathVariable("id") Integer recipeId,
+            @RequestParam Integer userId
+    ){
+        ServiceStatus code = recipeService.delete(userId, recipeId, false);
+        switch (code){
+            case success -> {
+                return ResponseEntity.ok("Success");
+            }
+            case UserNotFound -> {
+                return ResponseEntity.status(404).body("There is no such user");
+            }
+            case EntityNotFound -> {
+                return ResponseEntity.status(404).body("There is no such recipe");
+            }
+            case NotAllowed -> {
+                return ResponseEntity.status(403).body("It's looks like you don't have access to this recipe");
             }
         }
         return ResponseEntity.status(418).body("-_-");

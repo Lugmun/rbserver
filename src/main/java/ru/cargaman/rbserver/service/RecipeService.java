@@ -9,6 +9,7 @@ import ru.cargaman.rbserver.status.ServiceStatus;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class RecipeService {
@@ -42,6 +43,18 @@ public class RecipeService {
                 .toList();
     }
 
+    public List<Recipe> getAllAvailable(Integer userId){
+        return recipeRepository.findAll()
+                .stream()
+                .filter(r -> !r.isDeleted())
+                .filter(r -> r.isPublic() || Objects.equals(r.getAuthor().getId(), userId))
+                .toList();
+    }
+
+    public Recipe getById(Integer id){
+        return recipeRepository.findById(id).orElse(null);
+    }
+
     public ServiceStatus add(Integer userId, String name, String description, Integer time, Integer portions){
         User user = userRepository.findById(userId).orElse(null);
         if(user == null){
@@ -67,6 +80,59 @@ public class RecipeService {
         if(portions != null){
             recipe.setPortions(portions);
         }
+        recipeRepository.save(recipe);
+        return ServiceStatus.success;
+    }
+    public ServiceStatus update(Integer userId, Integer recipeId, String name, String description, Integer time, Integer portions){
+        User user = userRepository.findById(userId).orElse(null);
+        if(user == null){
+            return ServiceStatus.UserNotFound;
+        }
+        Recipe recipe = recipeRepository.findById(recipeId).orElse(null);
+        if(recipe == null){
+            return ServiceStatus.EntityNotFound;
+        }
+        if(!Objects.equals(recipe.getAuthor().getId(), userId)){
+            return ServiceStatus.NotAllowed;
+        }
+        if(name != null){
+            if(recipeRepository.findAll()
+                    .stream()
+                    .filter(r -> r.isPublic() || Objects.equals(r.getAuthor().getId(), userId))
+                    .anyMatch(r -> Objects.equals(r.getName(), name))){
+                return ServiceStatus.NotUnique;
+            }
+            recipe.setName(name);
+        }
+        if(recipe.isDeleted()){
+            return ServiceStatus.EntityNotFound;
+        }
+        if(description != null){
+            recipe.setDescription(description);
+        }
+        if(time != null){
+            recipe.setTime(time);
+        }
+        if(portions != null){
+            recipe.setPortions(portions);
+        }
+        recipeRepository.save(recipe);
+        return ServiceStatus.success;
+    }
+
+    public ServiceStatus delete(Integer userId, Integer recipeId, boolean value){
+        User user = userRepository.findById(userId).orElse(null);
+        if(user == null){
+            return ServiceStatus.UserNotFound;
+        }
+        Recipe recipe = recipeRepository.findById(recipeId).orElse(null);
+        if(recipe == null){
+            return ServiceStatus.EntityNotFound;
+        }
+        if(!Objects.equals(recipe.getAuthor().getId(), userId)){
+            return ServiceStatus.NotAllowed;
+        }
+        recipe.setDeleted(value);
         recipeRepository.save(recipe);
         return ServiceStatus.success;
     }
