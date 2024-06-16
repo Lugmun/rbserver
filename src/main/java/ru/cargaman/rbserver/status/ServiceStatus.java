@@ -5,5 +5,6 @@ public enum ServiceStatus {
     NotUnique,
     UserNotFound,
     EntityNotFound,
-    NotAllowed
+    NotAllowed,
+    RecipeNotFound
 }
