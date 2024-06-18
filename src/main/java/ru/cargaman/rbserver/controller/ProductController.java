@@ -97,18 +97,7 @@ public class ProductController {
             return ResponseEntity.badRequest().body("There is no product measure in request body");
         }
         ServiceStatus code = productService.add(userId, productRequest.name(), productRequest.measure());
-        switch (code){
-            case success -> {
-                return ResponseEntity.ok("Success");
-            }
-            case UserNotFound -> {
-                return ResponseEntity.status(404).body("There is no such user");
-            }
-            case NotUnique -> {
-                return ResponseEntity.status(409).body("Product with such name already exists");
-            }
-        }
-        return ResponseEntity.status(418).body("-_-");
+        return ChooseAnswer(code);
     }
 
     @PutMapping
@@ -121,24 +110,15 @@ public class ProductController {
             return ResponseEntity.badRequest().body("There is no product id in request body");
         }
         ServiceStatus code = productService.update(userId, productRequest.productId(), productRequest.name(), productRequest.measure());
-        switch (code){
-            case success -> {
-                return ResponseEntity.ok("Success");
-            }
-            case UserNotFound -> {
-                return ResponseEntity.status(404).body("There is no such user");
-            }
-            case EntityNotFound -> {
-                return ResponseEntity.status(404).body("There is no such product");
-            }
-            case NotUnique -> {
-                return ResponseEntity.status(409).body("Product with such name already exists");
-            }
-            case NotAllowed -> {
-                return ResponseEntity.status(403).body("You can not edit this product");
-            }
-        }
-        return ResponseEntity.status(418).body("-_-");
+        return ChooseAnswer(code);
+    }
+
+    @PutMapping("/public/{id}")
+    public ResponseEntity<?> publicProduct(
+            @PathVariable("id") Integer productId
+    ){
+        ServiceStatus code = productService.PublicUpdate(productId);
+        return ChooseAnswer(code);
     }
 
     @DeleteMapping("/{id}")
@@ -148,21 +128,7 @@ public class ProductController {
             @RequestParam Integer userId
     ){
         ServiceStatus code = productService.delete(id, true, userId);
-        switch (code){
-            case success -> {
-                return ResponseEntity.ok("Success");
-            }
-            case NotAllowed -> {
-                return ResponseEntity.status(403).body("It's look like you don't have access to this product");
-            }
-            case UserNotFound -> {
-                return ResponseEntity.status(404).body("There is no such user");
-            }
-            case EntityNotFound -> {
-                return ResponseEntity.status(404).body("There is no such product");
-            }
-        }
-        return ResponseEntity.status(418).body("-_-");
+        return ChooseAnswer(code);
     }
 
     @DeleteMapping("/restore/{id}")
@@ -172,18 +138,28 @@ public class ProductController {
             @RequestParam Integer userId
     ){
         ServiceStatus code = productService.delete(id, false, userId);
+        return ChooseAnswer(code);
+    }
+
+    private ResponseEntity<?> ChooseAnswer(ServiceStatus code){
         switch (code){
             case success -> {
                 return ResponseEntity.ok("Success");
             }
-            case NotAllowed -> {
-                return ResponseEntity.status(403).body("It's look like you don't have access to this product");
+            case NotUnique -> {
+                return ResponseEntity.status(409).body("Product with such name already exists");
             }
             case UserNotFound -> {
                 return ResponseEntity.status(404).body("There is no such user");
             }
+            case RecipeNotFound -> {
+                return ResponseEntity.status(404).body("There is no such recipe");
+            }
             case EntityNotFound -> {
                 return ResponseEntity.status(404).body("There is no such product");
+            }
+            case NotAllowed -> {
+                return ResponseEntity.status(403).body("It's look like you don't have access to this product");
             }
         }
         return ResponseEntity.status(418).body("-_-");

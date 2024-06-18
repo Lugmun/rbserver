@@ -136,7 +136,15 @@ public class ProductService {
         productRepository.findById(productId).get().setPublic(isPublic);
     }
 
-    //todo: admins public product update and other abilities
+    public ServiceStatus PublicUpdate(Integer productId){
+        Product product = productRepository.findById(productId).orElse(null);
+        if(product == null){
+            return ServiceStatus.EntityNotFound;
+        }
+        product.setPublic(true);
+        productRepository.save(product);
+        return ServiceStatus.success;
+    }
 
     public ServiceStatus delete(Integer productId, boolean value, Integer userId) {
         User user = userRepository.findById(userId).orElse(null);

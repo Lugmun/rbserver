@@ -120,6 +120,16 @@ public class RecipeService {
         return ServiceStatus.success;
     }
 
+    public ServiceStatus PublicUpdate(Integer recipeId){
+        Recipe recipe = recipeRepository.findById(recipeId).orElse(null);
+        if(recipe == null){
+            return ServiceStatus.EntityNotFound;
+        }
+        recipe.setPublic(true);
+        recipeRepository.save(recipe);
+        return ServiceStatus.success;
+    }
+
     public ServiceStatus delete(Integer userId, Integer recipeId, boolean value){
         User user = userRepository.findById(userId).orElse(null);
         if(user == null){

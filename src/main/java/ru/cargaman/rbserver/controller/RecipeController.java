@@ -2,6 +2,7 @@ package ru.cargaman.rbserver.controller;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.cargaman.rbserver.model.Recipe;
@@ -105,19 +106,11 @@ public class RecipeController {
             full = false;
         }
         Recipe recipe = recipeService.getById(recipeId);
-        if(recipe == null){
-            return ResponseEntity.status(404).body("There is no such recipe");
-        }
-        if(recipe.isPublic() || Objects.equals(recipe.getAuthor().getId(), userId)){
-            if(full){
-                return ResponseEntity.ok(recipeFullParse(recipe));
-            }
-            else {
-                return ResponseEntity.ok(recipeParse(recipe));
-            }
+        if(full){
+            return ResponseEntity.ok(recipeFullParse(recipe));
         }
         else {
-            return ResponseEntity.status(403).body("It's looks like you don't have access to this recipe");
+            return ResponseEntity.ok(recipeParse(recipe));
         }
     }
 
@@ -130,18 +123,7 @@ public class RecipeController {
             return ResponseEntity.badRequest().body("There is no recipe name in request body");
         }
         ServiceStatus code = recipeService.add(userId, recipeRequest.name(), recipeRequest.description(), recipeRequest.time(), recipeRequest.portions());
-        switch(code){
-            case success -> {
-                return ResponseEntity.ok("Success");
-            }
-            case UserNotFound -> {
-                return ResponseEntity.ok("There is no such user");
-            }
-            case NotUnique -> {
-                return ResponseEntity.ok("It's looks like recipe with such name already exists");
-            }
-        }
-        return ResponseEntity.status(418).body("-_-");
+        return ChooseAnswer(code);
     }
 
     @PutMapping
@@ -158,24 +140,15 @@ public class RecipeController {
                 recipeRequest.description(),
                 recipeRequest.time(),
                 recipeRequest.portions());
-        switch (code){
-            case success -> {
-                return ResponseEntity.ok("Success");
-            }
-            case UserNotFound -> {
-                return ResponseEntity.status(404).body("There is no such user");
-            }
-            case EntityNotFound -> {
-                return ResponseEntity.status(404).body("There is no such recipe");
-            }
-            case NotUnique -> {
-                return ResponseEntity.status(409).body("Recipe with such name already exists");
-            }
-            case NotAllowed -> {
-                return ResponseEntity.status(403).body("It's looks like you don't have access to this recipe");
-            }
-        }
-        return ResponseEntity.status(418).body("-_-");
+        return ChooseAnswer(code);
+    }
+
+    @PutMapping("/public/{id}")
+    public ResponseEntity<?> publicRecipe(
+            @PathVariable("id") Integer recipeId
+    ){
+        ServiceStatus code = recipeService.PublicUpdate(recipeId);
+        return ChooseAnswer(code);
     }
 
     @DeleteMapping("/{id}")
@@ -184,21 +157,7 @@ public class RecipeController {
             @RequestParam Integer userId
     ){
         ServiceStatus code = recipeService.delete(userId, recipeId, true);
-        switch (code){
-            case success -> {
-                return ResponseEntity.ok("Success");
-            }
-            case UserNotFound -> {
-                return ResponseEntity.status(404).body("There is no such user");
-            }
-            case EntityNotFound -> {
-                return ResponseEntity.status(404).body("There is no such recipe");
-            }
-            case NotAllowed -> {
-                return ResponseEntity.status(403).body("It's looks like you don't have access to this recipe");
-            }
-        }
-        return ResponseEntity.status(418).body("-_-");
+        return ChooseAnswer(code);
     }
 
     @DeleteMapping("/restore/{id}")
@@ -207,21 +166,7 @@ public class RecipeController {
             @RequestParam Integer userId
     ){
         ServiceStatus code = recipeService.delete(userId, recipeId, false);
-        switch (code){
-            case success -> {
-                return ResponseEntity.ok("Success");
-            }
-            case UserNotFound -> {
-                return ResponseEntity.status(404).body("There is no such user");
-            }
-            case EntityNotFound -> {
-                return ResponseEntity.status(404).body("There is no such recipe");
-            }
-            case NotAllowed -> {
-                return ResponseEntity.status(403).body("It's looks like you don't have access to this recipe");
-            }
-        }
-        return ResponseEntity.status(418).body("-_-");
+        return ChooseAnswer(code);
     }
 
     private RecipeFullResponse recipeFullParse(Recipe recipe){
@@ -265,5 +210,29 @@ public class RecipeController {
                 recipe.isPublic(),
                 recipe.getAuthor().getLogin()
         );
+    }
+
+    private ResponseEntity<?> ChooseAnswer(ServiceStatus code){
+        switch (code){
+            case success -> {
+                return ResponseEntity.ok("Success");
+            }
+            case NotUnique -> {
+                return ResponseEntity.status(409).body("Recipe with such name already exists");
+            }
+            case UserNotFound -> {
+                return ResponseEntity.status(404).body("There is no such user");
+            }
+            case RecipeNotFound -> {
+                return ResponseEntity.status(404).body("?");
+            }
+            case EntityNotFound -> {
+                return ResponseEntity.status(404).body("There is no such recipe");
+            }
+            case NotAllowed -> {
+                return ResponseEntity.status(403).body("It's looks like you don't have access to this product");
+            }
+        }
+        return ResponseEntity.status(418).body("-_-");
     }
 }

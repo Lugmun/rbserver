@@ -80,24 +80,7 @@ public class IngredientController {
                 ingredientRequest.amount(),
                 ingredientRequest.productId()
         );
-        switch(code){
-            case success -> {
-                return ResponseEntity.ok("Success");
-            }
-            case UserNotFound -> {
-                return ResponseEntity.status(404).body("There is no such user");
-            }
-            case RecipeNotFound -> {
-                return ResponseEntity.status(404).body("There is no such recipe");
-            }
-            case NotAllowed -> {
-                return ResponseEntity.status(403).body("It's looks like you don't have access to the recipe");
-            }
-            case EntityNotFound -> {
-                return ResponseEntity.status(404).body("There is no such product");
-            }
-        }
-        return ResponseEntity.status(418).body("-_-");
+        return ChooseAnswer(code);
     }
 
     @PostMapping("/all")
@@ -115,24 +98,7 @@ public class IngredientController {
             }
         }
         ServiceStatus code = ingredientService.AddAll(userId, recipeId, ingredientRequests);
-        switch(code){
-            case success -> {
-                return ResponseEntity.ok("Success");
-            }
-            case UserNotFound -> {
-                return ResponseEntity.status(404).body("There is no such user");
-            }
-            case RecipeNotFound -> {
-                return ResponseEntity.status(404).body("There is no such recipe");
-            }
-            case NotAllowed -> {
-                return ResponseEntity.status(403).body("It's looks like you don't have access to the recipe");
-            }
-            case EntityNotFound -> {
-                return ResponseEntity.status(404).body("There is no such product");
-            }
-        }
-        return ResponseEntity.status(418).body("-_-");
+        return ChooseAnswer(code);
     }
     @PutMapping
     public ResponseEntity<?> PutIngredient(
@@ -148,21 +114,7 @@ public class IngredientController {
                 ingredientRequest.amount(),
                 ingredientRequest.productId()
         );
-        switch(code){
-            case success -> {
-                return ResponseEntity.ok("Success");
-            }
-            case UserNotFound -> {
-                return ResponseEntity.status(404).body("There is no such user");
-            }
-            case NotAllowed -> {
-                return ResponseEntity.status(403).body("It's looks like you don't have access to the recipe");
-            }
-            case EntityNotFound -> {
-                return ResponseEntity.status(404).body("There is no such product or ingredient");
-            }
-        }
-        return ResponseEntity.status(418).body("-_-");
+        return ChooseAnswer(code);
     }
 
     @DeleteMapping("/{id}")
@@ -171,18 +123,28 @@ public class IngredientController {
             @PathVariable("id") Integer ingredientId
     ){
         ServiceStatus code = ingredientService.Delete(userId, ingredientId);
-        switch(code){
+        return ChooseAnswer(code);
+    }
+
+    private ResponseEntity<?> ChooseAnswer(ServiceStatus code){
+        switch (code){
             case success -> {
                 return ResponseEntity.ok("Success");
+            }
+            case NotUnique -> {
+                return ResponseEntity.status(409).body("?");
             }
             case UserNotFound -> {
                 return ResponseEntity.status(404).body("There is no such user");
             }
-            case NotAllowed -> {
-                return ResponseEntity.status(403).body("It's looks like you don't have access to the recipe");
+            case RecipeNotFound -> {
+                return ResponseEntity.status(404).body("There is no such recipe");
             }
             case EntityNotFound -> {
                 return ResponseEntity.status(404).body("There is no such ingredient");
+            }
+            case NotAllowed -> {
+                return ResponseEntity.status(403).body("It's looks like you don't have access to the recipe");
             }
         }
         return ResponseEntity.status(418).body("-_-");

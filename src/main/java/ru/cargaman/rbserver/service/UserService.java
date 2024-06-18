@@ -1,12 +1,14 @@
 package ru.cargaman.rbserver.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.cargaman.rbserver.model.User;
 import ru.cargaman.rbserver.repository.RoleRepository;
 import ru.cargaman.rbserver.repository.UserRepository;
 import ru.cargaman.rbserver.status.ServiceStatus;
 
+import java.io.Console;
 import java.util.Objects;
 
 
@@ -17,6 +19,9 @@ public class UserService {
 
     private UserRepository userRepository;
     private RoleRepository roleRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     public void setUserRepository(UserRepository userRepository, RoleRepository roleRepository) {
@@ -48,5 +53,21 @@ public class UserService {
         }else {
             return ServiceStatus.NotUnique;
         }
+    }
+
+    public ServiceStatus findByLoginAndPassword(String login, String password){
+        User user = userRepository.findAll()
+                .stream()
+                .filter(u -> Objects.equals(u.getLogin(), login))
+                .findFirst().orElse(null);
+        System.out.println(passwordEncoder);
+        System.out.println(password);
+        if(user == null){
+            return ServiceStatus.UserNotFound;
+        }
+        if(passwordEncoder.matches(password, user.getPassword())){
+            return ServiceStatus.success;
+        }
+        return ServiceStatus.NotAllowed;
     }
 }
