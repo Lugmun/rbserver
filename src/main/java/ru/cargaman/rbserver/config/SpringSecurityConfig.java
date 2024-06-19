@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -50,6 +51,11 @@ public class SpringSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/recipe/all").hasAuthority("admin")
+                        .requestMatchers(HttpMethod.GET, "/ingredient/{id}").hasAuthority("admin")
+                        .requestMatchers("/product/all").hasAuthority("admin")
+                        .requestMatchers(HttpMethod.GET, "/step/{id}").hasAuthority("admin")
+                        .requestMatchers("/user/**").hasAuthority("admin")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -60,8 +60,6 @@ public class UserService {
                 .stream()
                 .filter(u -> Objects.equals(u.getLogin(), login))
                 .findFirst().orElse(null);
-        System.out.println(passwordEncoder);
-        System.out.println(password);
         if(user == null){
             return ServiceStatus.UserNotFound;
         }
